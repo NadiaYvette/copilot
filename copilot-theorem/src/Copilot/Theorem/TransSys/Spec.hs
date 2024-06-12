@@ -34,7 +34,6 @@ import Control.Applicative (liftA2)
 import Control.Monad (foldM, guard)
 
 import Data.Maybe
-import Data.Monoid ((<>))
 import Data.Map (Map)
 import Data.Set (Set, isSubsetOf, member)
 import Data.Bimap (Bimap)

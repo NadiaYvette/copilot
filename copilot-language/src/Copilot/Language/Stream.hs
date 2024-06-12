@@ -14,6 +14,7 @@ module Copilot.Language.Stream
   , Copilot.Language.Stream.atan2
   ) where
 
+import qualified Data.Kind as Kind (Type)
 import Copilot.Core (Typed, typeOf)
 import qualified Copilot.Core as Core
 import Copilot.Language.Error
@@ -27,7 +28,7 @@ import qualified Prelude as P
 -- to streams, or by combining existing streams to form new streams (e.g.,
 -- 'Op2', 'Op3').
 
-data Stream :: * -> * where
+data Stream :: Kind.Type -> Kind.Type where
   Append      :: Typed a
               => [a] -> Maybe (Stream Bool) -> Stream a -> Stream a
   Const       :: Typed a => a -> Stream a

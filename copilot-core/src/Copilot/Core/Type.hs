@@ -4,6 +4,7 @@
 {-# LANGUAGE FlexibleInstances         #-}
 {-# LANGUAGE GADTs                     #-}
 {-# LANGUAGE KindSignatures            #-}
+{-# LANGUAGE LambdaCase                #-}
 {-# LANGUAGE Safe                      #-}
 {-# LANGUAGE ScopedTypeVariables       #-}
 {-# LANGUAGE TypeOperators             #-}
@@ -40,6 +41,7 @@ module Copilot.Core.Type
 -- External imports
 import Data.Int           (Int16, Int32, Int64, Int8)
 import Data.List          (intercalate)
+import qualified Data.Kind as Kind (Type)
 import Data.Proxy         (Proxy (..))
 import Data.Type.Equality as DE
 import Data.Typeable      (Typeable, eqT, typeRep)
@@ -92,7 +94,7 @@ instance {-# OVERLAPPABLE #-} (Typed t, Struct t) => Show t where
 -- Note that both arrays and structs use dependently typed features. In the
 -- former, the length of the array is part of the type. In the latter, the
 -- names of the fields are part of the type.
-data Type :: * -> * where
+data Type :: Kind.Type -> Kind.Type where
   Bool   :: Type Bool
   Int8   :: Type Int8
   Int16  :: Type Int16
@@ -117,6 +119,7 @@ typeLength _ = fromIntegral $ natVal (Proxy :: Proxy n)
 typeSize :: forall n t . KnownNat n => Type (Array n t) -> Int
 typeSize ty@(Array ty'@(Array _)) = typeLength ty * typeSize ty'
 typeSize ty@(Array _            ) = typeLength ty
+typeSize (Struct _) = error "typeSize: found Struct _"
 
 instance TestEquality Type where
   testEquality Bool   Bool   = Just DE.Refl
@@ -238,7 +241,9 @@ instance Typed Double where
 
 instance (Typeable t, Typed t, KnownNat n) => Typed (Array n t) where
   typeOf               = Array typeOf
-  simpleType (Array t) = SArray t
+  simpleType           = \case
+    Array t -> SArray t
+    Struct _ -> SStruct
 
 -- | A untyped type (no phantom type).
 data UType = forall a . Typeable a => UType { uTypeType :: Type a }

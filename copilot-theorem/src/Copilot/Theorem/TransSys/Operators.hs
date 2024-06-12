@@ -168,6 +168,10 @@ handleOp1 resT (op, e) handleExpr notHandledF mkOp = case op of
 
   -- Casting operator.
   C.Cast _ tb -> castTo tb
+  _           ->
+    Err.impossible "handleOp1"
+                   "copilot-theorem"
+                            
 
   where
     boolOp :: Op1 Bool -> m (expr Bool) -> m (expr resT)
@@ -261,6 +265,10 @@ handleOp2 resT (op, e1, e2) handleExpr notHandledF mkOp notOp = case op of
   -- be casted to 'Integer', like 'ta'
   C.BwShiftL ta _tb   -> notHandled ta "bwshiftl"
   C.BwShiftR ta _tb   -> notHandled ta "bwshiftr"
+  _                   ->
+    impossible "handleOp2"
+               "copilot-theorem" 
+               "Unexpected binary operation."
 
   where
 

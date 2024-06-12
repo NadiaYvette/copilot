@@ -3,8 +3,10 @@
 -- | A tagless interpreter for Copilot specifications.
 
 {-# LANGUAGE BangPatterns       #-}
+{-# LANGUAGE BlockArguments     #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE GADTs              #-}
+{-# LANGUAGE RecordWildCards    #-}
 {-# LANGUAGE Safe               #-}
 
 module Copilot.Interpret.Eval
@@ -28,7 +30,7 @@ import Control.Exception (Exception, throw)
 import Data.Bits         (complement, shiftL, shiftR, xor, (.&.), (.|.))
 import Data.Dynamic      (Dynamic, fromDynamic, toDyn)
 import Data.List         (transpose)
-import Data.Maybe        (fromJust)
+import Data.Maybe        (fromJust, fromMaybe)
 import Data.Typeable     (Typeable)
 
 -- | Exceptions that may be thrown during interpretation of a Copilot
@@ -139,14 +141,16 @@ type LocalEnv = [(Name, Dynamic)]
 evalExpr_ :: Typeable a => Int -> Expr a -> LocalEnv -> Env Id -> a
 evalExpr_ k e0 locs strms = case e0 of
   Const _ x                          -> x
-  Drop t i id                        ->
-    let Just buff = lookup id strms >>= fromDynamic in
-    reverse buff !! (fromIntegral i + k)
-  Local t1 _ name e1 e2              ->
+  Drop _ i id                        -> fromMaybe failure do
+    buff <- fromDynamic =<< lookup id strms
+    pure $ reverse buff !! (fromIntegral i + k)
+    where
+      failure = error $ "evalExpr_: " ++ show id ++ " missing from LocalEnv"
+  Local _ _ name e1 e2              ->
     let x     = evalExpr_ k e1 locs strms in
     let locs' = (name, toDyn x) : locs  in
     x `seq` locs' `seq` evalExpr_ k e2  locs' strms
-  Var t name                         -> fromJust $ lookup name locs >>= fromDynamic
+  Var _ name                         -> fromJust $ lookup name locs >>= fromDynamic
   ExternVar _ name xs                -> evalExternVar k name xs
   Op1 op e1                          ->
     let ev1 = evalExpr_ k e1 locs strms in
@@ -206,7 +210,9 @@ evalOp1 op = case op of
     Floor _    -> P.fromIntegral . idI . P.floor
     BwNot _    -> complement
     Cast _ _   -> P.fromIntegral
-    GetField (Struct _) _ f -> unfield . f
+    GetField r _ f
+      | Struct _ <- r -> unfield . f
+      | otherwise -> error "transOp1: field accessor applied to non-record"
   where
     -- Used to help GHC pick a return type for ceiling/floor
     idI :: Integer -> Integer
@@ -262,10 +268,7 @@ evalOp3 (Mux _) = \ !v !x !y -> if v then x else y
 -- | Turn a stream into a key-value pair that can be added to an 'Env' for
 -- simulation.
 initStrm :: Stream -> (Id, Dynamic)
-initStrm Stream { streamId       = id
-                , streamBuffer   = buffer
-                , streamExprType = t } =
-  (id, toDyn (reverse buffer))
+initStrm Stream { .. } = (streamId, toDyn (reverse streamBuffer))
 
 -- | Evaluate several streams for a number of steps, producing the environment
 -- at the end of the evaluation.
@@ -276,18 +279,15 @@ evalStreams top specStrms initStrms =
   evalStreams_ 0 initStrms
   where
   evalStreams_ :: Int -> Env Id -> Env Id
-  evalStreams_ k strms | k == top  = strms
-  evalStreams_ k strms | otherwise =
-    evalStreams_ (k+1) $! strms_
+  evalStreams_ k strms
+    | k == top  = strms
+    | otherwise = evalStreams_ (k+1) $! strms_
     where
     strms_ = map evalStream specStrms
-    evalStream Stream { streamId       = id
-                      , streamExpr     = e
-                      , streamExprType = t } =
-      let xs = fromJust $ lookup id strms >>= fromDynamic      in
-      let x  = evalExpr_ k e [] strms                          in
-      let ls = x `seq` (x:xs)                                  in
-      (id, toDyn ls)
+    evalStream Stream { .. } = (streamId, toDyn ls)
+      where xs = fromJust $ lookup streamId strms >>= fromDynamic
+            x  = evalExpr_ k streamExpr [] strms
+            ls = x `seq` (x:xs)
 
 -- | Evaluate a trigger for a number of steps.
 evalTrigger :: ShowType          -- ^ Show booleans as @0@/@1@ (C) or
@@ -392,5 +392,5 @@ showWit t =
     Word64 -> ShowWit
     Float  -> ShowWit
     Double -> ShowWit
-    Array t -> ShowWit
-    Struct t -> ShowWit
+    Array _ -> ShowWit
+    Struct _ -> ShowWit

@@ -75,6 +75,7 @@ import qualified Copilot.Core.Spec              as CS
 import qualified Copilot.Core.Type              as CT
 import qualified Copilot.Core.Type.Array        as CT
 import qualified Copilot.PrettyPrint            as CP
+import Copilot.Theorem.Misc.Error (impossible)
 
 -- Translation into What4
 
@@ -369,9 +370,11 @@ translateConstExpr sym tp a = case tp of
     Some n <- return $ mkNatRepr (genericLength elts)
     case isZeroOrGT1 n of
       Left Refl -> return XEmptyArray
-      Right LeqProof -> do
-        let Just v = V.fromList n elts
-        return $ XArray v
+      Right LeqProof
+        | Just v <- V.fromList n elts -> pure $ XArray v
+        | otherwise -> impossible "translateConstExpr"
+                                  "copilot-theorem"
+                                  "Unexpected list formation failure."
   CT.Struct _ -> do
     elts <- forM (CT.toValues a) $ \(CT.Value tp (CT.Field a)) ->
       translateConstExpr sym tp a

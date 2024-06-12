@@ -96,7 +96,11 @@ transOp1 op e =
     Floor    ty   -> funCall (specializeMathFunName ty "floor") [e]
     BwNot    _    -> (C..~) e
     Cast     _ ty -> C.Cast (transTypeName ty) e
-    GetField (Struct _)  _ f -> C.Dot e (accessorName f)
+    GetField r _ f -> case r of
+      Struct _ -> C.Dot e (accessorName f)
+      _ -> impossible "transOp1"
+                      "copilot-c99"
+                      "transOp1 can't apply record accessor to non-record"
 
 -- | Translates a Copilot binary operator and its arguments into a C99
 -- expression.

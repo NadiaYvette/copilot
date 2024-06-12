@@ -26,7 +26,7 @@ import Data.IORef
 import System.Mem.StableName.Dynamic
 import System.Mem.StableName.Map (Map)
 import qualified System.Mem.StableName.Map as M
-import Control.Monad (liftM, unless)
+import Control.Monad (unless)
 
 -- | Transform a Copilot Language specification into a Copilot Core
 -- specification.
@@ -188,18 +188,6 @@ mkExpr refMkId refStreams refMap = go
       w3 <- go e3
       return $ Core.Op3 op w1 w2 w3
 
-    ------------------------------------------------------
-
-  mkFunArg :: Arg -> IO Core.UExpr
-  mkFunArg (Arg e) = do
-    w <- mkExpr refMkId refStreams refMap e
-    return $ Core.UExpr typeOf w
-
-  mkStrArg :: (Core.Name, Arg) -> IO (Core.Name, Core.UExpr)
-  mkStrArg (name, Arg e) = do
-    w <- mkExpr refMkId refStreams refMap e
-    return $ (name, Core.UExpr typeOf w)
-
 -- | Transform a Copilot stream expression into a Copilot Core stream
 -- expression.
 {-# INLINE mkStream #-}
@@ -210,14 +198,12 @@ mkStream
   -> IORef [Core.Stream]
   -> Stream a
   -> IO Id
-mkStream refMkId refStreams refMap e0 = do
+mkStream refMkId refStreams refMap e0@(Append buf _ e) = do
   dstn <- makeDynStableName e0
-  let Append buf _ e = e0 -- avoids warning
   mk <- haveVisited dstn
   case mk of
     Just id_ -> return id_
     Nothing  -> addToVisited dstn buf e
-
   where
 
   {-# INLINE haveVisited #-}
@@ -233,17 +219,21 @@ mkStream refMkId refStreams refMap e0 = do
     -> [a]
     -> Stream a
     -> IO Id
-  addToVisited dstn buf e = do
+  addToVisited dstn visitedBuf visitedExpr = do
     id <- mkId refMkId
     modifyIORef refStreams (M.insert dstn id)
-    w <- mkExpr refMkId refStreams refMap e
+    w <- mkExpr refMkId refStreams refMap visitedExpr
     modifyIORef refMap $ (:)
       Core.Stream
         { Core.streamId         = id
-        , Core.streamBuffer     = buf
+        , Core.streamBuffer     = visitedBuf
         , Core.streamExpr       = w
         , Core.streamExprType   = typeOf }
     return id
+mkStream _ _ _ _ =
+  impossible "mkStream"
+             "copilot-language"
+             "Expected Append case."
 
 -- | Create a fresh, unused 'Id'.
 mkId :: IORef Int -> IO Id

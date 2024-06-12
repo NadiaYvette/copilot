@@ -3,7 +3,7 @@
 {-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE NamedFieldPuns    #-}
 {-# LANGUAGE RankNTypes        #-}
-{-# LANGUAGE Trustworthy       #-}
+{-# LANGUAGE Safe              #-}
 
 -- | Connections to various SMT solvers and theorem provers.
 module Copilot.Theorem.Prover.SMT

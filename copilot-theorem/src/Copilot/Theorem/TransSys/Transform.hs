@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE Safe       #-}
 
@@ -11,6 +12,7 @@ module Copilot.Theorem.TransSys.Transform
 
 import Copilot.Theorem.TransSys.Spec
 import Copilot.Theorem.TransSys.Renaming
+import Copilot.Theorem.Misc.Error (impossible)
 
 import Copilot.Theorem.Misc.Utils
 
@@ -207,8 +209,11 @@ removeCycles spec =
      let depGraph = map (\n -> (nrep n, nodeId n, nodeDependencies n)) ns
      in Graph.stronglyConnComp depGraph
 
-    topoSort s = s { specNodes =
-      map (\(Graph.AcyclicSCC n) -> n) $ buildScc id (specNodes s) }
+    topoSort s = s { specNodes = map topoSortWork $ buildScc id (specNodes s) }
+    topoSortWork =
+      \case
+        Graph.AcyclicSCC n -> n
+        _ -> impossible "removeCycles" "copilot-theorem" "Unexpected graph type."
 
 -- | Completes each node of a specification with imported variables such that
 -- each node contains a copy of all its dependencies.

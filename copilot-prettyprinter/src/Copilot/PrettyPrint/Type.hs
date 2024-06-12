@@ -2,6 +2,7 @@
 
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE GADTs                     #-}
+{-# LANGUAGE LambdaCase                #-}
 {-# LANGUAGE Safe                      #-}
 
 -- | Show Copilot Core types and typed values.
@@ -50,8 +51,8 @@ showType t =
     Word64 -> "Word64"
     Float  -> "Float"
     Double -> "Double"
-    Array t -> "Array " ++ showType t
-    Struct t -> "Struct"
+    Array arrayType -> "Array " ++ showType arrayType
+    Struct _ -> "Struct"
 
 -- * Auxiliary show instance
 
@@ -60,18 +61,17 @@ data ShowWit a = Show a => ShowWit
 
 -- | Turn a type into a show witness.
 showWit :: Type a -> ShowWit a
-showWit t =
-  case t of
-    Bool   -> ShowWit
-    Int8   -> ShowWit
-    Int16  -> ShowWit
-    Int32  -> ShowWit
-    Int64  -> ShowWit
-    Word8  -> ShowWit
-    Word16 -> ShowWit
-    Word32 -> ShowWit
-    Word64 -> ShowWit
-    Float  -> ShowWit
-    Double -> ShowWit
-    Array t -> ShowWit
-    Struct t -> ShowWit
+showWit = \case
+  Bool     -> ShowWit
+  Int8     -> ShowWit
+  Int16    -> ShowWit
+  Int32    -> ShowWit
+  Int64    -> ShowWit
+  Word8    -> ShowWit
+  Word16   -> ShowWit
+  Word32   -> ShowWit
+  Word64   -> ShowWit
+  Float    -> ShowWit
+  Double   -> ShowWit
+  Array _  -> ShowWit
+  Struct _ -> ShowWit

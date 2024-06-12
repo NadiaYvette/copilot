@@ -16,7 +16,7 @@ import Copilot.Core (DropIdx)
 import qualified Copilot.Core as C
 import Copilot.Language.Stream (Stream (..))
 import Copilot.Language.Spec
-import Copilot.Language.Error (badUsage)
+import Copilot.Language.Error (badUsage, impossible)
 
 import Data.List (groupBy)
 import Data.IORef
@@ -131,21 +131,34 @@ analyzeExpr refStreams s = do
     dstn <- makeDynStableName e0
     assertNotVisited e0 dstn nodes
     let nodes' = M.insert dstn () nodes
-    case e0 of
-      Append _ _ e        -> analyzeAppend refStreams dstn e () analyzeExpr
-      Const _             -> return ()
-      Drop k e1           -> analyzeDrop (fromIntegral k) e1
-      Extern _ _          -> return ()
-      Local e f           -> go seenExt nodes' e >>
-                             go seenExt nodes' (f (Var "dummy"))
-      Var _               -> return ()
-      Op1 _ e             -> go seenExt nodes' e
-      Op2 _ e1 e2         -> go seenExt nodes' e1 >>
-                             go seenExt nodes' e2
-      Op3 _ e1 e2 e3      -> go seenExt nodes' e1 >>
-                             go seenExt nodes' e2 >>
-                             go seenExt nodes' e3
-      Label _ e           -> go seenExt nodes' e
+    case (seenExt, e0) of
+      (NoExtern, Append _ _ e)   ->
+        analyzeAppend refStreams dstn e () analyzeExpr
+      (NoExtern, Const _)        -> pure ()
+      (NoExtern, Drop k e1)      -> analyzeDrop (fromIntegral k) e1
+      (NoExtern, Extern _ _)     -> pure ()
+      (NoExtern, Local e f)      -> do
+        go seenExt nodes' e
+        go seenExt nodes' . f $ Var "dummy"
+      (NoExtern, Var _ )         -> pure ()
+      (NoExtern, Op1 _ e)        -> go seenExt nodes' e
+      (NoExtern, Op2 _ e1 e2)    -> do
+        go seenExt nodes' e1
+        go seenExt nodes' e2
+      (NoExtern, Op3 _ e1 e2 e3) -> do
+        go seenExt nodes' e1
+        go seenExt nodes' e2
+        go seenExt nodes' e3
+      (NoExtern, Label _ e)      -> go seenExt nodes' e
+      (SeenFun, _) -> impossible "analyzeExpr"
+                                 "copilot-language"
+                                 "Unexpected function expr."
+      (SeenArr, _) -> impossible "analyzeExpr"
+                                 "copilot-language"
+                                 "Unexpected function expr."
+      (SeenStruct, _) -> impossible "analyzeExpr"
+                                 "copilot-language"
+                                 "Unexpected function expr."
 
 -- | Detect whether the given stream name has already been visited.
 --

@@ -19,7 +19,6 @@ module Copilot.Library.MTL
 
 import Copilot.Language
 import qualified Prelude as P
-import Copilot.Library.Utils
 
 -- It is necessary to provide a positive number of time units
 -- dist to each function, where the distance between the times
@@ -36,9 +35,9 @@ eventually l u clk dist s = res clk s $ (u `P.div` dist) + 1
   mins = clk + (constant l)
   maxes = clk + (constant u)
   res _ _ 0 = false
-  res c s k =
-    c <= maxes && ((mins <= c && s) || nextRes c s k)
-  nextRes c s k = res (drop 1 c) (drop 1 s) (k - 1)
+  res c s' k =
+    c <= maxes && ((mins <= c && s') || nextRes c s' k)
+  nextRes c s' k = res (drop 1 c) (drop 1 s') (k - 1)
 
 -- | True at some point in the past within the time bounds specified.
 --
@@ -51,9 +50,9 @@ eventuallyPrev l u clk dist s = res clk s $ (u `P.div` dist) + 1
   mins = clk - (constant u)
   maxes = clk - (constant l)
   res _ _ 0 = false
-  res c s k =
-    mins <= c && ((c <= maxes && s) || nextRes c s k)
-  nextRes c s k = res ([0] ++ c) ([False] ++ s) (k - 1)
+  res c s' k =
+    mins <= c && ((c <= maxes && s') || nextRes c s' k)
+  nextRes c s' k = res ([0] ++ c) ([False] ++ s') (k - 1)
 
 -- | Always true in the future, within the time bounds specified.
 --
@@ -66,9 +65,9 @@ always l u clk dist s = res clk s $ (u `P.div` dist) + 1
   mins = clk + (constant l)
   maxes = clk + (constant u)
   res _ _ 0 = true
-  res c s k =
-    c > maxes || ((mins <= c ==> s) && nextRes c s k)
-  nextRes c s k = res (drop 1 c) (drop 1 s) (k - 1)
+  res c s' k =
+    c > maxes || ((mins <= c ==> s') && nextRes c s' k)
+  nextRes c s' k = res (drop 1 c) (drop 1 s') (k - 1)
 
 -- | Always true in the past, within the time bounds specified.
 --
@@ -81,9 +80,9 @@ alwaysBeen l u clk dist s = res clk s $ (u `P.div` dist) + 1
   mins = clk - (constant u)
   maxes = clk - (constant l)
   res _ _ 0 = true
-  res c s k =
-    c < mins || ((c <= maxes ==> s) && nextRes c s k)
-  nextRes c s k = res ([0] ++ c) ([True] ++ s) (k - 1)
+  res c s' k =
+    c < mins || ((c <= maxes ==> s') && nextRes c s' k)
+  nextRes c s' k = res ([0] ++ c) ([True] ++ s') (k - 1)
 
 -- | True until another stream is true, within the time bounds specified.
 --

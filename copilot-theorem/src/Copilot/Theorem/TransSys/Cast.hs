@@ -20,6 +20,7 @@ import Data.Dynamic (Dynamic(..), fromDynamic, toDyn)
 import GHC.Float
 
 import qualified Copilot.Theorem.TransSys.Type as K
+import Copilot.Theorem.Misc.Error (impossible)
 
 -- | Synonym for a dynamic type in Copilot core.
 type Dyn = Dynamic
@@ -39,6 +40,9 @@ castedType t = case t of
   Word64  -> K.U K.Integer
   Float   -> K.U K.Real
   Double  -> K.U K.Real
+  _       -> impossible "castedType"
+                        "copilot-theorem"
+                        "Unexpected type in cast."
 
 -- | Cast a dynamic value to a given type.
 cast :: K.Type t -> Dyn -> t

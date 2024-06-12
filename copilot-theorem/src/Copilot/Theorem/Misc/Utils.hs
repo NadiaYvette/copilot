@@ -1,4 +1,4 @@
-{-# LANGUAGE Trustworthy #-}
+{-# LANGUAGE Safe #-}
 
 -- | Utility / auxiliary functions.
 module Copilot.Theorem.Misc.Utils
@@ -9,7 +9,6 @@ module Copilot.Theorem.Misc.Utils
 import Data.Function (on)
 import Data.List (groupBy, sortBy, group, sort)
 
-import Control.Applicative ((<$>))
 import Control.Monad
 
 import qualified Data.Set as Set

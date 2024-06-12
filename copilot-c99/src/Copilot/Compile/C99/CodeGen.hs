@@ -72,12 +72,22 @@ mkStructDecln (Struct x) = C.TypeDecln struct
 
     mkField :: Value a -> C.FieldDecln
     mkField (Value ty field) = C.FieldDecln (transType ty) (fieldName field)
+mkStructDecln _ =
+  impossible
+    "mkStructDecln"
+    "copilot-c99"
+    "Type other than struct encountered."
 
 -- | Write a forward struct declaration.
 mkStructForwDecln :: Struct a => Type a -> C.Decln
 mkStructForwDecln (Struct x) = C.TypeDecln struct
   where
     struct = C.TypeSpec $ C.Struct (typeName x)
+mkStructForwDecln _ =
+  impossible
+    "mkStructDecln"
+    "copilot-c99"
+    "Type other than struct encountered."
 
 -- * Ring buffers
 

@@ -57,7 +57,6 @@ import qualified What4.InterpretedFloatingPoint as WFP
 import qualified What4.Solver                   as WS
 import qualified What4.Solver.DReal             as WS
 
-import Control.Monad (forM)
 import Control.Monad.State
 import qualified Data.BitVector.Sized as BV
 import Data.Foldable (foldrM)

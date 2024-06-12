@@ -22,7 +22,6 @@ import qualified Copilot.Core as Core
 
 import Data.List (intercalate)
 import Control.Applicative (liftA2)
-import Control.Monad        (ap, liftM)
 import Control.Monad.Writer
 
 -- | Output produced by a prover, containing the 'Status' of the proof and
@@ -79,12 +78,12 @@ instance Functor (ProofScheme a) where
   fmap = liftM
 
 instance Applicative (ProofScheme a) where
-  pure = return
+  pure a = Proof (return a)
   (<*>) = ap
 
 instance Monad (ProofScheme a) where
   (Proof p) >>= f = Proof $ p >>= (\a -> case f a of Proof p' -> p')
-  return a = Proof (return a)
+  return = pure
 
 -- | Prover actions.
 data Action where

@@ -47,7 +47,6 @@ import Copilot.Theorem.TransSys.Spec
 import Copilot.Theorem.TransSys.Cast
 import Copilot.Theorem.Misc.Utils
 
-import Control.Monad            (liftM, liftM2, unless)
 import Control.Monad.State.Lazy
 
 import Data.Char (isNumber)

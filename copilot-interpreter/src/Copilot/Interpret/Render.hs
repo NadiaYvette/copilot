@@ -105,11 +105,13 @@ asColumnsWithBuff lls q = normalize
           longColumnLen = maximum (map length lls)
           longEntryLen = maximum $ map docLen (concat lls)
 
+docLen :: Doc -> Int
 docLen d = length $ render d
 
 -- | Pad a string on the right to reach an expected length.
 pad :: Int -> Int -> a -> [a] -> [a]
-pad lx max b ls = ls ++ replicate (max - lx) b
+pad seenLength expectedLength b ls =
+  ls ++ replicate (expectedLength - seenLength) b
 
 -- | Pad a list of strings on the right with spaces.
 pad' :: Int      -- ^ Mininum number of spaces to add

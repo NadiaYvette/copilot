@@ -1,5 +1,5 @@
 {-# LANGUAGE LambdaCase  #-}
-{-# LANGUAGE Trustworthy #-}
+{-# LANGUAGE Safe        #-}
 
 -- | A prover backend based on Kind2.
 module Copilot.Theorem.Kind2.Prover

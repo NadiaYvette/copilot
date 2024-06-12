@@ -9,7 +9,6 @@ import Copilot.Language (Spec)
 import qualified Copilot.PrettyPrint as PP
 
 import Options.Applicative
-import Data.Semigroup ((<>))
 import Control.Monad (when)
 
 -- | An interpreter of Copilot specifications for a given

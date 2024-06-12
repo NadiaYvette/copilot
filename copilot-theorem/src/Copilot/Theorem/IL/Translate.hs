@@ -9,12 +9,12 @@
 module Copilot.Theorem.IL.Translate ( translate, translateWithBounds ) where
 
 import Copilot.Theorem.IL.Spec
+import Copilot.Theorem.Misc.Error (impossible)
 
 import qualified Copilot.Core as C
 
 import qualified Data.Map.Strict as Map
 
-import Control.Monad       (forM, liftM2, when)
 import Control.Monad.State
 
 import Data.Char
@@ -196,6 +196,9 @@ trConst t v = case t of
   t@C.Word16 -> negifyI v (trType t)
   t@C.Word32 -> negifyI v (trType t)
   t@C.Word64 -> negifyI v (trType t)
+  _ -> impossible "trConst"
+                  "copilot-theorem"
+                  "Unexpected type for constant."
   where
     negifyR :: Double -> Expr
     negifyR v
@@ -277,6 +280,9 @@ trType = \case
   C.Word64 -> BV64
   C.Float  -> Real
   C.Double -> Real
+  _ -> impossible "trType"
+                  "copilot-theorem"
+                  "Unexpected type for constant."
 
 -- | Translation state.
 data TransST = TransST
